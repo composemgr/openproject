@@ -1,0 +1,56 @@
+# nginx proxy address - http://172.17.0.1:60121
+
+name: openproject
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: openproject/openproject:latest
+    container_name: openproject-app
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+      OPENPROJECT_HOST__NAME: ${BASE_HOST_NAME:-$HOSTNAME}
+      OPENPROJECT_SECRET_KEY_BASE: ${APP_SECRET_KEY:-2645d237ac15f45f7140815d9bae1250}
+    ports:
+      - '172.17.0.1:60121:80'
+    volumes:
+      - './rootfs/data/openproject/assets:/var/openproject/assets:z'
+      - './rootfs/data/openproject/pgdata:/var/openproject/pgdata:z'
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'cloudflare.hostname=openproject.${CLOUDFLARE_ZONE_NAME}'
+      - 'cloudflare.service=http://openproject-app:80'
+      - 'traefik.docker.network=proxy'
+      - 'traefik.http.routers.openproject-app.entrypoints=http'
+      - 'traefik.http.routers.openproject-app-secure.tls=true'
+      - 'traefik.http.routers.openproject-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.openproject-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.openproject-app.middlewares=openproject-app-https-redirect'
+      - 'traefik.http.routers.openproject-app-secure.entrypoints=https'
+      - 'traefik.http.routers.openproject-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.openproject-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.openproject-app-secure.service=openproject-app'
+      - 'traefik.http.services.openproject-app.loadbalancer.server.port=80'
+    networks:
+      - openproject
+      - proxy
+      - cloudflare
+
+networks:
+  openproject:
+    name: openproject
+    external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
