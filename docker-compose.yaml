@@ -1,0 +1,34 @@
+# nginx proxy address - http://172.17.0.1:60121
+
+name: openproject
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: openproject/openproject:latest
+    container_name: openproject-app
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+      OPENPROJECT_HOST__NAME: ${BASE_HOST_NAME:-$HOSTNAME}
+      OPENPROJECT_SECRET_KEY_BASE: ${APP_SECRET_KEY:-changeme_secret_key}
+    ports:
+      - '172.17.0.1:60121:80'
+    volumes:
+      - './rootfs/data/openproject/assets:/var/openproject/assets:z'
+      - './rootfs/data/openproject/pgdata:/var/openproject/pgdata:z'
+    networks:
+      - openproject
+
+networks:
+  openproject:
+    name: openproject
+    external: false
