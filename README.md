@@ -46,8 +46,8 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/data/openproject/assets` - Data storage
-- `./rootfs/data/openproject/pgdata` - Data storage
+- `./volumes/data/openproject/assets` - Data storage
+- `./volumes/data/openproject/pgdata` - Data storage
 
 ## 🔐 Security
 
