@@ -19,7 +19,7 @@ services:
       TZ: ${TZ:-America/New_York}
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       OPENPROJECT_HOST__NAME: ${BASE_HOST_NAME:-$HOSTNAME}
-      OPENPROJECT_SECRET_KEY_BASE: ${APP_SECRET_KEY:-changeme_secret_key}
+      OPENPROJECT_SECRET_KEY_BASE: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
     ports:
       - '172.17.0.1:60121:80'
     volumes:
