@@ -20,6 +20,7 @@ services:
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       OPENPROJECT_HOST__NAME: ${BASE_HOST_NAME:-$HOSTNAME}
       OPENPROJECT_SECRET_KEY_BASE: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
+      CONTAINER_NAME: openproject-app
     ports:
       - '172.17.0.1:60121:80'
     volumes:
@@ -27,8 +28,30 @@ services:
       - './volumes/data/openproject/pgdata:/var/openproject/pgdata:z'
     networks:
       - openproject
+      - proxy
+      - cloudflare
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://openproject-app:80'
+      - 'cloudflare.hostname=openproject.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.openproject-app.entrypoints=http'
+      - 'traefik.http.routers.openproject-app-secure.tls=true'
+      - 'traefik.http.routers.openproject-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.openproject-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.openproject-app.middlewares=openproject-app-https-redirect'
+      - 'traefik.http.routers.openproject-app-secure.entrypoints=https'
+      - 'traefik.http.routers.openproject-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.openproject-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.openproject-app-secure.service=openproject-app'
+      - 'traefik.http.services.openproject-app.loadbalancer.server.port=80'
 
 networks:
   openproject:
     name: openproject
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
